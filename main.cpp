@@ -1,70 +1,108 @@
 #include <iostream>
+#include <fstream>
 
-int strlen(char *str) {
-    const int max_str_len = 80;
-    int i = 0;
-    while(i<max_str_len) {
-        if(str[i] == 0) {
-            return i;
+struct TString {
+    char *_ptr;
+    size_t _len;
+    size_t _next_search_pos;
+
+    TString() {
+        _ptr = nullptr;
+        _len = 0;
+        _next_search_pos = 0;
+    };
+
+    TString(const char *str, size_t len) {
+        _len = len;
+        _ptr = new char[len];
+        for (size_t i = 0; i < len; i++) {
+            _ptr[i] = str[i];
         }
-        i++;
+        _next_search_pos = 0;
     }
-    return max_str_len;
-}
 
-int strcmp(const char *s0, const char *s1) {
-    int i = 0;
-    while(s0[i] == s1[i] && s0[i] != 0 && s1[i] != 0) {
-        i++;
+    ~TString(){
+        delete _ptr;
     }
-    return i;
-}
 
-int strpos(char *where, char *what) {
-    int search_len = strlen(where) - strlen(what);
-    int what_len = strlen(what);
-    for(int i = 0;i<=search_len;i++) {
-        if(strcmp(&where[i], &what[0]) == what_len) {
-            return i;
+    int _cmp(const char *s0, const char *s1, size_t len) {
+        size_t i = 0;
+        for(i = 0;i<len;i++) {
+            if(s0[i] != s1[i]) {
+                return false;
+            }
         }
-    }
-    return -1;
-}
-
-char *replace(char *source_string, char *old_string, char *new_string) {
-    int old_string_pos = strpos(source_string, old_string);
-    if(old_string_pos == -1) {
-        return nullptr;
+        return true;
     }
 
-    int new_string_len = strlen(new_string);
-    int source_string_len = strlen(source_string);
-    int old_string_len = strlen(old_string);
-    int old_tail_pos = old_string_pos + old_string_len;
-    int new_tail_pos = old_string_pos + new_string_len;
-    int tail_len = source_string_len - old_tail_pos;
-    int result_size = source_string_len - old_string_len + new_string_len;
-
-    char *result = new char[result_size];
-    for(int i = 0; i < old_string_pos; i++) {
-        result[i] = source_string[i];
+    int find(TString *what) {
+        size_t search_len = _len - what->_len;
+        for(size_t i = _next_search_pos;i<=search_len;i++) {
+            if(_cmp(&_ptr[i], &what->_ptr[0], what->_len)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
-    for(int i = 0;i<new_string_len;i++) {
-        result[old_string_pos + i] = new_string[i];
+    void replace(TString *what, TString *replacer) {
+        int find_position = find(what);
+        while(find_position > 0) {
+            size_t newlen = _len - what->_len + replacer->_len;
+            char *newptr = new char[newlen];
+
+            for(size_t i = 0;i<(size_t ) find_position;i++) {
+                newptr[i] = _ptr[i];
+            }
+
+            for(size_t i=0;i<replacer->_len;i++) {
+                newptr[find_position+i] = replacer->_ptr[i];
+            }
+
+            size_t old_tail_start = find_position + what->_len;
+            size_t new_tail_start = find_position + replacer->_len;
+            size_t tail_len = _len - old_tail_start;
+
+            for(size_t i = 0;i<tail_len;i++) {
+                newptr[new_tail_start+i] = _ptr[old_tail_start+i];
+            }
+            delete _ptr;
+            _ptr = newptr;
+            _len = newlen;
+            _next_search_pos = find_position+replacer->_len;
+            find_position = find(what);
+        }
+        _next_search_pos = 0;
     }
 
-    for(int i = 0;i<tail_len;i++) {
-        result[new_tail_pos+i] = source_string[old_tail_pos+i];
+    std::string to_string() const {
+        std::string result(_ptr, _len);
+        return result;
     }
-    return  result;
-}
+
+};
 
 int main() {
-    char *hello = (char *) "Hello, World!";
-    char *new_hello = replace(hello, (char *) "World", (char *) "pretty World");
-    std::cout << new_hello  << std::endl;
-    char *next_hello = replace(new_hello, (char *) "pretty", (char *) "ugly");
-    std::cout << next_hello  << std::endl;
+    std::ifstream inputfile;
+    inputfile.open("input.txt");
+    if (!inputfile.good()) {
+        std::cerr << "Input file error!" << std::endl;
+        return -1;
+    }
+
+    std::string line;
+
+    std::getline(inputfile, line);
+    TString *source_line = new TString(line.data(), line.length());
+
+    std::getline(inputfile, line);
+    TString *what_to_replace = new TString(line.data(), line.length());
+
+    std::getline(inputfile, line);
+    TString *replace_with = new TString(line.data(), line.length());
+
+    source_line->replace(what_to_replace, replace_with);
+    std::cout << source_line->to_string();
+
     return 0;
 }
