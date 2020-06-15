@@ -108,7 +108,6 @@ int main() {
     TString *replace_with = new TString(line.data(), line.length());
 
     source_line->replace(what_to_replace, replace_with);
-    std::cout << source_line->to_string();
 
     return 0;
 }
