@@ -109,5 +109,8 @@ int main() {
 
     source_line->replace(what_to_replace, replace_with);
 
+    std::ofstream outfile("output.txt");
+    outfile << source_line->to_string();
+
     return 0;
 }
