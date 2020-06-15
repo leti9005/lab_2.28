@@ -25,7 +25,7 @@ struct TString {
         delete _ptr;
     }
 
-    int _cmp(const char *s0, const char *s1, size_t len) {
+    bool _cmp(const char *s0, const char *s1, size_t len) {
         size_t i = 0;
         for(i = 0;i<len;i++) {
             if(s0[i] != s1[i]) {
