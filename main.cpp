@@ -83,6 +83,12 @@ struct TString {
 };
 
 int main() {
+
+    std::cout << "-------------------------------------" << std::endl;
+    std::cout << "Author: Dmitrii Tochanskii, 9005"  << std::endl;
+    std::cout << "Start date: 01.06.2020. End date: 01.06.2020 Version 1.0.0" << std::endl;
+    std::cout << "-------------------------------------" << std::endl;
+
     std::ifstream inputfile;
     inputfile.open("input.txt");
     if (!inputfile.good()) {
