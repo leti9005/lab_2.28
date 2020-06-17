@@ -5,11 +5,15 @@ struct TString {
     char *_ptr;
     size_t _len;
     size_t _next_search_pos;
+    int _found_pos;
+    int what_len;
 
     TString() {
         _ptr = nullptr;
         _len = 0;
         _next_search_pos = 0;
+        _found_pos = -1;
+        what_len = 0;
     };
 
     TString(const char *str, size_t len) {
@@ -35,44 +39,48 @@ struct TString {
         return true;
     }
 
-    int find(TString *what) {
-        size_t search_len = _len - what->_len;
+    void find(TString *what) {
+        what_len = what->_len;
+        size_t search_len = _len - what_len;
         for(size_t i = _next_search_pos;i<=search_len;i++) {
             if(_cmp(&_ptr[i], &what->_ptr[0], what->_len)) {
-                return i;
+        	_found_pos = i;
+		_next_search_pos = i;
+		std::cerr << _found_pos << std::endl;
+                return;
             }
         }
-        return -1;
+	std::cerr << "Not found"<< std::endl;
+        _found_pos = -1;
+        return;
     }
-
-    void replace(TString *what, TString *replacer) {
-        int find_position = find(what);
-        while(find_position > 0) {
-            size_t newlen = _len - what->_len + replacer->_len;
-            char *newptr = new char[newlen];
-
-            for(size_t i = 0;i<(size_t ) find_position;i++) {
-                newptr[i] = _ptr[i];
-            }
-
-            for(size_t i=0;i<replacer->_len;i++) {
-                newptr[find_position+i] = replacer->_ptr[i];
-            }
-
-            size_t old_tail_start = find_position + what->_len;
-            size_t new_tail_start = find_position + replacer->_len;
-            size_t tail_len = _len - old_tail_start;
-
-            for(size_t i = 0;i<tail_len;i++) {
-                newptr[new_tail_start+i] = _ptr[old_tail_start+i];
-            }
-            delete _ptr;
-            _ptr = newptr;
-            _len = newlen;
-            _next_search_pos = find_position+replacer->_len;
-            find_position = find(what);
+    
+    bool replace(TString *replacer) {
+	if(_found_pos == -1) {
+	    return false;
+	}
+	
+        size_t newlen = _len - what_len + replacer->_len;
+        char *newptr = new char[newlen];
+        for(size_t i = 0;i<(size_t ) _found_pos;i++) {
+            newptr[i] = _ptr[i];
         }
-        _next_search_pos = 0;
+
+        for(size_t i=0;i<replacer->_len;i++) {
+            newptr[_found_pos+i] = replacer->_ptr[i];
+        }
+        size_t old_tail_start = _found_pos + what_len;
+        size_t new_tail_start = _found_pos + replacer->_len;
+        size_t tail_len = _len - old_tail_start;
+
+        for(size_t i = 0;i<tail_len;i++) {
+            newptr[new_tail_start+i] = _ptr[old_tail_start+i];
+        }
+        delete _ptr;
+        _ptr = newptr;
+        _len = newlen;
+        _next_search_pos = _found_pos+replacer->_len;
+	return true;
     }
 
     std::string to_string() const {
@@ -107,7 +115,9 @@ int main() {
     std::getline(inputfile, line);
     TString *replace_with = new TString(line.data(), line.length());
 
-    source_line->replace(what_to_replace, replace_with);
+    do {
+	source_line->find(what_to_replace);
+    } while(source_line->replace(replace_with));
 
     std::ofstream outfile("output.txt");
     outfile << source_line->to_string();
